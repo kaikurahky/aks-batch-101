@@ -1,0 +1,39 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: scheduled-job
+  namespace: ${NAMESPACE}
+spec:
+  schedule: "*/10 * * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 2
+  failedJobsHistoryLimit: 2
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      ttlSecondsAfterFinished: 900
+      template:
+        spec:
+          restartPolicy: Never
+          nodeSelector:
+            workload: batch
+          tolerations:
+            - key: workload
+              operator: Equal
+              value: batch
+              effect: NoSchedule
+          containers:
+            - name: worker
+              image: ${IMAGE}
+              env:
+                - name: RUN_MODE
+                  value: compute
+                - name: TASK_ID
+                  value: scheduled
+                - name: PROCESS_SECONDS
+                  value: "20"
+              resources:
+                requests:
+                  cpu: 250m
+                  memory: 128Mi
+

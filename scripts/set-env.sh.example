@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+
+# このファイルを set-env.sh にコピーして source してください。
+export LOCATION="japaneast"
+export RESOURCE_GROUP="rg-aks-batch-101"
+export AKS_CLUSTER="aks-batch-101"
+export SYSTEM_NODE_VM_SIZE="Standard_D2s_v5"
+export BATCH_NODE_VM_SIZE="Standard_D4s_v5"
+export BATCH_NODEPOOL="batchpool"
+export NAMESPACE="batch-lab"
+export QUEUE_NAME="work-items"
+export WORKLOAD_IDENTITY_NAME="id-aks-batch-worker"
+export SERVICE_ACCOUNT_NAME="batch-worker"
+export IMAGE_NAME="batch-worker"
+export IMAGE_TAG="v1"
+
+SUBSCRIPTION_ID=$(az account show --query id --output tsv 2>/dev/null || true)
+if [[ -z "$SUBSCRIPTION_ID" ]]; then
+  echo "Azure へログインしてから、このファイルを source してください。" >&2
+  return 1 2>/dev/null || exit 1
+fi
+
+SUFFIX=$(printf '%s' "$SUBSCRIPTION_ID" | sha256sum | cut -c1-8)
+export ACR_NAME="aksbatch${SUFFIX}"
+export STORAGE_ACCOUNT="aksbatch${SUFFIX}"
+export IMAGE="${ACR_NAME}.azurecr.io/${IMAGE_NAME}:${IMAGE_TAG}"
+
+unset SUBSCRIPTION_ID SUFFIX
+

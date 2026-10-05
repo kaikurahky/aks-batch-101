@@ -1,0 +1,28 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: queue-seeder
+  namespace: ${NAMESPACE}
+spec:
+  backoffLimit: 2
+  ttlSecondsAfterFinished: 900
+  template:
+    metadata:
+      labels:
+        azure.workload.identity/use: "true"
+    spec:
+      serviceAccountName: ${SERVICE_ACCOUNT_NAME}
+      restartPolicy: Never
+      containers:
+        - name: seeder
+          image: ${IMAGE}
+          env:
+            - name: RUN_MODE
+              value: seed
+            - name: MESSAGE_COUNT
+              value: "20"
+            - name: STORAGE_ACCOUNT
+              value: ${STORAGE_ACCOUNT}
+            - name: QUEUE_NAME
+              value: ${QUEUE_NAME}
+

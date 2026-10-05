@@ -1,0 +1,6 @@
+scripts/set-env.sh
+rendered/
+*.log
+__pycache__/
+.venv/
+

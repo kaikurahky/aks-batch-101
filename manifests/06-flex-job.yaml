@@ -1,0 +1,32 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: flex-job
+  namespace: ${NAMESPACE}
+spec:
+  backoffLimit: 2
+  ttlSecondsAfterFinished: 900
+  template:
+    spec:
+      restartPolicy: Never
+      nodeSelector:
+        workload: flex-batch
+      tolerations:
+        - key: workload
+          operator: Equal
+          value: flex-batch
+          effect: NoSchedule
+      containers:
+        - name: worker
+          image: ${IMAGE}
+          env:
+            - name: RUN_MODE
+              value: compute
+            - name: TASK_ID
+              value: flex-001
+            - name: PROCESS_SECONDS
+              value: "60"
+          resources:
+            requests:
+              cpu: 500m
+              memory: 128Mi

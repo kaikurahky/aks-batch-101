@@ -1,0 +1,69 @@
+apiVersion: keda.sh/v1alpha1
+kind: TriggerAuthentication
+metadata:
+  name: queue-workload-identity
+  namespace: ${NAMESPACE}
+spec:
+  podIdentity:
+    provider: azure-workload
+    identityId: ${WORKLOAD_CLIENT_ID}
+---
+apiVersion: keda.sh/v1alpha1
+kind: ScaledJob
+metadata:
+  name: queue-worker
+  namespace: ${NAMESPACE}
+spec:
+  pollingInterval: 10
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  minReplicaCount: 0
+  maxReplicaCount: 20
+  scalingStrategy:
+    strategy: default
+  jobTargetRef:
+    backoffLimit: 2
+    ttlSecondsAfterFinished: 600
+    template:
+      metadata:
+        labels:
+          app: queue-worker
+          azure.workload.identity/use: "true"
+      spec:
+        serviceAccountName: ${SERVICE_ACCOUNT_NAME}
+        restartPolicy: Never
+        nodeSelector:
+          workload: batch
+        tolerations:
+          - key: workload
+            operator: Equal
+            value: batch
+            effect: NoSchedule
+        containers:
+          - name: worker
+            image: ${IMAGE}
+            env:
+              - name: RUN_MODE
+                value: queue
+              - name: PROCESS_SECONDS
+                value: "90"
+              - name: STORAGE_ACCOUNT
+                value: ${STORAGE_ACCOUNT}
+              - name: QUEUE_NAME
+                value: ${QUEUE_NAME}
+            resources:
+              requests:
+                cpu: 500m
+                memory: 128Mi
+              limits:
+                cpu: "1"
+                memory: 256Mi
+  triggers:
+    - type: azure-queue
+      metadata:
+        accountName: ${STORAGE_ACCOUNT}
+        queueName: ${QUEUE_NAME}
+        queueLength: "1"
+      authenticationRef:
+        name: queue-workload-identity
+

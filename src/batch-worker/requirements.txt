@@ -1,0 +1,3 @@
+azure-identity==1.25.0
+azure-storage-queue==12.14.1
+
